@@ -1,11 +1,19 @@
 #coding=utf-8
 import numpy
+import codecs
+# @TODO 
+# Readline()
+# Write()
+# Numpy
+#
+
 class CsvIO:
     _delimiter=','
     _newline='\n'
     _fname=''
     _possible_delimiters=[',',';','\t','|','^']
     _possible_quotes=['"','\'','~']
+    _handle=None
     def __init__(self,fname,delimiter=None,newline=None,quotedStrings=None,possible_delimiters=None,possible_quotes=None):
         """Initialize the CSV-File 
         Search for the delimiter and newline characters.
@@ -19,6 +27,8 @@ class CsvIO:
         possible_delimiters -- Array of possible delimiter characters
         possible_quotes -- Array of possible quote characters
         """
+
+        self._fname=fname
 
         #Set the possible characters
         if possible_delimiters!=None:
@@ -79,6 +89,52 @@ class CsvIO:
             self.quotedStrings=quotedStrings
 
 
+    def _parseline(self,line):
+        """Parse a line of the CSV file"""
+        cols=line.split(self._delimiter)
+        numpy_col=[]
+        # Here we need the iter!
+        i=iter(cols)
+        while True:
+            try:
+                col=i.next()
+            except StopIteration:
+                break
+            if col.rstrip()=='':
+                numpy_col.append('')
+                continue
+            is_string=False # Do we need this?
+            
+            if self._quotedStrings!='':
+                # When the string is quoted, everything is ok
+                if col[0]==col.rstrip()[-1]==self._quotedStrings:
+                    if col[-1]==self._newline:
+                        col=col.rstrip()
+                    col=col[1:-1]
+                    is_string=True
+                # If the string has only on the first position a quotation, 
+                # than the string is not complete. We have to concatenate 
+                # the current column with the next.
+                elif col[0]==self._quotedStrings:
+                    while col[-1]!=self._quotedStrings:
+                        try:
+                            nextcol=i.next()
+                            col+=self._delimiter + nextcol
+                        except StopIteration:
+                            #@TODO Fix it, when the string continues on the next line
+                            col+=self._quotedStrings
+                    col=col[1:-1]
+                    is_string=True
+                # The column is not a string
+                else:
+                    is_string=False
+
+            # numpy_col.append(numpy.fromstring(col))
+            # @TODO Something like this...
+            numpy_col.append(col)
+        return numpy_col
+    
+
     
     def read(self,names=True):
         """Return a 2-dimensional numpy-Array with the content of the CSV-file
@@ -86,7 +142,12 @@ class CsvIO:
         Keyword arguments:
         names -- Should the names be extracted from the first line of the CSV-file and saved in the dtype?
         """
-        return numpy.genfromtxt(fname,delimiter=_delimiter,names=names,dtype=None,invalid_raise=False)
+        with codecs.open(self._fname,'r', "utf-8-sig") as handle:
+            lines=handle.readlines()
+            out=[]
+            for line in lines:
+                out.append(self._parseline(line))
+        return out
     def write(self,data,namesFromArray=True):
         """Write a numpy-array to a CSV-file
 
