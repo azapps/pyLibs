@@ -7,7 +7,7 @@ import codecs
 
 class CsvIO:
     """Read and Write from/to a CSV-file
-    It automatically infer the format of the given file and converts it to a numpy-array.
+    It automatically infers the format of the given file and converts it to a numpy array.
     Write to the file in the given format.
     """
     _delimiter=','
@@ -19,15 +19,15 @@ class CsvIO:
     def __init__(self,fname,delimiter=None,newline=None,quotedStrings=None,possible_delimiters=None,possible_quotes=None):
         """Initialize the CSV-File 
         Search for the delimiter and newline characters.
-        Also find out which is the quotation Character, if there is any
+        Also find out which is the quotation character, if there is any
 
         Keyword arguments:
         fname -- The filename
         delimiter -- optional delimiter
         newline -- optional newline character(s)
-        quotedStrings -- empty, if the strings are not quoted, else the quotation character
-        possible_delimiters -- Array of possible delimiter characters
-        possible_quotes -- Array of possible quote characters
+        quotedStrings -- empty, if the strings are not quoted, otherwise the quotation character
+        possible_delimiters -- array of possible delimiter characters
+        possible_quotes -- array of possible quote characters
         """
 
         self._fname=fname
@@ -98,7 +98,7 @@ class CsvIO:
 
     def readline(self):
         """Read and Parse a line of the CSV file
-        return an 1D (numpy) Array of the data
+        return an 1D (numpy) array of the data
         raise EOFError
         """
         line=self._handle.readline()
@@ -157,7 +157,7 @@ class CsvIO:
 
     
     def read(self,names=True):
-        """Return a 2-dimensional numpy-Array with the content of the CSV-file
+        """Return a 2-dimensional numpy array with the content of the CSV-file
 
         Keyword arguments:
         names -- Should the names be extracted from the first line of the CSV-file and saved in the dtype?
@@ -170,11 +170,12 @@ class CsvIO:
                 break
         return out
 
-    def write(self,data,namesFromArray=True,fname=None):
-        """Write a numpy-array to a CSV-file
+    def write(self,data,fname=None):
+        """Write a numpy array to a CSV-file
 
         Keyword arguments:
-        namesFromArray -- Should the names be extracted from the array and be written in the first line of the CSV-file?
+        data -- The data, which should be stored in the file
+        fname -- The filename of the new file
         """
         if fname==None:
             fname=self._fname
