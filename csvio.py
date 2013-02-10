@@ -176,17 +176,16 @@ class CsvIO:
         Keyword arguments:
         namesFromArray -- Should the names be extracted from the array and be written in the first line of the CSV-file?
         """
-        write=''
-        for row in data:
-            i=0
-            for col in row:
-                if (isinstance(col,str) or isinstance(col,unicode)) and self._quotedStrings!='': # || numpy.dtype.???
-                    col=self._quotedStrings + col + self._quotedStrings
-                if i!=0: write+=self._delimiter
-                write+=col
-                i+=1
-            write+=self._newline
         if fname==None:
             fname=self._fname
         with codecs.open(fname,'w','utf-8-sig') as handle:
-            handle.write(write)
+            for row in data:
+                nrow=''
+                for i,col in enumerate(row):
+                    if (isinstance(col,str) or isinstance(col,unicode)) and self._quotedStrings!='': # || numpy.dtype.???
+                        col=self._quotedStrings + col + self._quotedStrings
+                    if i!=0: nrow+=self._delimiter
+                    nrow+=col
+                    i+=1
+                nrow+=self._newline
+                handle.write(nrow)
