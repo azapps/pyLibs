@@ -36,41 +36,44 @@ class CsvIO:
         if possible_quotes!=None:
             self._possible_quotes=possible_quotes
 
-        with file(fname,'r') as handle:
-            line=handle.readline()
-            # Find newline Character
-            # Two last characters=\r\n -> Windows
-            # Last Character=\n -> UNIX
-            if newline==None:
-                if line[-2:].strip()==line[-2:]:
-                    self._newline=line[-2:]
-                else:
-                    self._newline=line[-1:]
+        self._handle=codecs.open(fname,'r', "utf-8-sig")
+
+        line=self._handle.readline()
+        # Find newline Character
+        # Two last characters=\r\n -> Windows
+        # Last Character=\n -> UNIX
+        if newline==None:
+            if line[-2:].strip()==line[-2:]:
+                self._newline=line[-2:]
             else:
-                self._newline=newline
+                self._newline=line[-1:]
+        else:
+            self._newline=newline
 
-            # Find delimiter
-            # idea: count the possible delimiters, the most common character could be the delimiter
-            # is there any better idea?
-            if delimiter==None:
-                count_d=dict()
-                for d in self._possible_delimiters:
-                    count_d[d]=line.count(d)
-                delimiter=max(count_d,key=count_d.get)
-            self._delimiter=delimiter
+        # Find delimiter
+        # idea: count the possible delimiters, the most common character could be the delimiter
+        # is there any better idea?
+        if delimiter==None:
+            count_d=dict()
+            for d in self._possible_delimiters:
+                count_d[d]=line.count(d)
+            delimiter=max(count_d,key=count_d.get)
+        self._delimiter=delimiter
 
-            # Find out if strings are quoted
-            if quotedStrings==None:
-                splitted=line.split(self._delimiter,5)
-                count_quotes=dict((k,0) for k in self._possible_quotes)
-                for col in splitted:
-                    for q in self._possible_quotes:
-                        if col[0]==q==col[-1]:
-                            count_quotes[q]+=1
-                quotedStrings=max(count_quotes,key=count_quotes.get)
-                if count_quotes[quotedStrings]==0:
-                    quotedStrings=''
-            self._quotedStrings=quotedStrings
+        # Find out if strings are quoted
+        if quotedStrings==None:
+            splitted=line.split(self._delimiter,5)
+            count_quotes=dict((k,0) for k in self._possible_quotes)
+            for col in splitted:
+                for q in self._possible_quotes:
+                    if col[0]==q==col[-1]:
+                        count_quotes[q]+=1
+            quotedStrings=max(count_quotes,key=count_quotes.get)
+            if count_quotes[quotedStrings]==0:
+                quotedStrings=''
+        self._quotedStrings=quotedStrings
+
+        self._handle.seek(0)
 
     def getConfig(self):
         """Get a dictionary with the configs for the CSV file"""
@@ -79,6 +82,7 @@ class CsvIO:
                 'newline':self._newline,
                 'quotedStrings':self._quotedStrings
                 }
+
     def setConfig(self=None,delimiter=None,newline=None,quotedStrings=None):
         """Set the config for the CSV file"""
         if delimiter!=None:
@@ -89,8 +93,14 @@ class CsvIO:
             self.quotedStrings=quotedStrings
 
 
-    def _parseline(self,line):
-        """Parse a line of the CSV file"""
+    def readline(self):
+        """Read and Parse a line of the CSV file
+        return an 1D (numpy) Array of the data
+        raise EOFError
+        """
+        line=self._handle.readline()
+        if line=='':
+            raise EOFError
         cols=line.split(self._delimiter)
         numpy_col=[]
         # Here we need the iter!
@@ -121,8 +131,15 @@ class CsvIO:
                             nextcol=i.next()
                             col+=self._delimiter + nextcol
                         except StopIteration:
-                            #@TODO Fix it, when the string continues on the next line
-                            col+=self._quotedStrings
+                            # The string continues on the next line
+                            nline=self._handle.readline()
+                            if nline=='': # O_o
+                                raise EOFError
+                            ncols=nline.split(self._delimiter)
+                            cols.extend(ncols)
+                            i=iter(ncols)
+                            ncol=i.next()
+                            col+=ncol
                     col=col[1:-1]
                     is_string=True
                 # The column is not a string
@@ -142,28 +159,32 @@ class CsvIO:
         Keyword arguments:
         names -- Should the names be extracted from the first line of the CSV-file and saved in the dtype?
         """
-        with codecs.open(self._fname,'r', "utf-8-sig") as handle:
-            lines=handle.readlines()
-            out=[]
-            for line in lines:
-                out.append(self._parseline(line))
+        out=[]
+        while True:
+            try:
+                out.append(self.readline())
+            except EOFError:
+                break
         return out
-    def write(self,data,namesFromArray=True):
+
+    def write(self,data,namesFromArray=True,fname=None):
         """Write a numpy-array to a CSV-file
 
         Keyword arguments:
-        fname -- filename
-        data -- The numpy-array
         namesFromArray -- Should the names be extracted from the array and be written in the first line of the CSV-file?
         """
-        write=[]
-        if namesFromArray==True:
-            names=[]
-            for tup in data.dtype.descr:
-                names.append(tup[0])
-            write.append(_delimiter.join(names))
+        #with handle=codecs.open(fname,'r', "utf-8-sig")
+        write=''
         for row in data:
-            write.append(_delimiter.join(map(str,row)))
-        with file(fname,'w') as handle:
-            for r in write:
-                handle.write(r+_newline)
+            i=0
+            for col in row:
+                if (isinstance(col,str) or isinstance(col,unicode)) and self._quotedStrings!='': # || numpy.dtype.???
+                    col=self._quotedStrings + col + self._quotedStrings
+                if i!=0: write+=self._delimiter
+                write+=col
+                i+=1
+            write+=self._newline
+        if fname==None:
+            fname=self._fname
+        with codecs.open(fname,'w','utf-8-sig') as handle:
+            handle.write(write)
