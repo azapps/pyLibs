@@ -2,12 +2,14 @@
 import numpy
 import codecs
 # @TODO 
-# Readline()
-# Write()
 # Numpy
-#
+# Heuristical search for the delimiter characters
 
 class CsvIO:
+    """Read and Write from/to a CSV-file
+    It automatically infer the format of the given file and converts it to a numpy-array.
+    Write to the file in the given format.
+    """
     _delimiter=','
     _newline='\n'
     _fname=''
@@ -21,9 +23,9 @@ class CsvIO:
 
         Keyword arguments:
         fname -- The filename
-        delimiter -- optional delimiter (default: None)
-        newline -- optional newline character(s) (default: None)
-        quotedStrings -- empty, if the strings are not quoted, else the quotation character (default: None)
+        delimiter -- optional delimiter
+        newline -- optional newline character(s)
+        quotedStrings -- empty, if the strings are not quoted, else the quotation character
         possible_delimiters -- Array of possible delimiter characters
         possible_quotes -- Array of possible quote characters
         """
@@ -36,7 +38,7 @@ class CsvIO:
         if possible_quotes!=None:
             self._possible_quotes=possible_quotes
 
-        self._handle=codecs.open(fname,'r', "utf-8-sig")
+        self._handle=codecs.open(fname,'r', "utf-8-sig") # automatic recognition of the encoding?
 
         line=self._handle.readline()
         # Find newline Character
@@ -49,6 +51,7 @@ class CsvIO:
                 self._newline=line[-1:]
         else:
             self._newline=newline
+
 
         # Find delimiter
         # idea: count the possible delimiters, the most common character could be the delimiter
@@ -83,7 +86,7 @@ class CsvIO:
                 'quotedStrings':self._quotedStrings
                 }
 
-    def setConfig(self=None,delimiter=None,newline=None,quotedStrings=None):
+    def setConfig(self,delimiter=None,newline=None,quotedStrings=None):
         """Set the config for the CSV file"""
         if delimiter!=None:
             self._delimiter=delimiter
@@ -173,7 +176,6 @@ class CsvIO:
         Keyword arguments:
         namesFromArray -- Should the names be extracted from the array and be written in the first line of the CSV-file?
         """
-        #with handle=codecs.open(fname,'r', "utf-8-sig")
         write=''
         for row in data:
             i=0
