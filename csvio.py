@@ -3,7 +3,6 @@ import numpy
 import codecs
 # @TODO 
 # Numpy
-# Heuristical search for the delimiter characters
 
 class CsvIO:
     """Read and Write from/to a CSV-file
@@ -55,13 +54,28 @@ class CsvIO:
 
         # Find delimiter
         # idea: count the possible delimiters, the most common character could be the delimiter
-        # is there any better idea?
         if delimiter==None:
-            count_d=dict()
-            for d in self._possible_delimiters:
-                count_d[d]=line.count(d)
-            delimiter=max(count_d,key=count_d.get)
-        self._delimiter=delimiter
+            count_d=dict((key,[]) for key in self._possible_delimiters)
+            # count delimiters
+            for i in range(0,10):
+                for d in self._possible_delimiters:
+                    count_d[d].append(line.count(d))
+                line=self._handle.readline()
+                if line=='': break
+            
+
+            self._delimiter=self._possible_delimiters[0]
+            
+            # Get the most likely delimiter
+            for k in count_d:
+                avg=sum(count_d[k])/len(count_d[k])
+                std=numpy.std(count_d[k])
+                if avg > count_d[self._delimiter][0] or (avg==count_d[self._delimiter][0] and std<count_d[self._delimiter][0]):
+                    self._delimiter=k
+        else: self._delimiter=delimiter
+
+        self._handle.seek(0)
+        line=self._handle.readline()
 
         # Find out if strings are quoted
         if quotedStrings==None:
