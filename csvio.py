@@ -62,16 +62,17 @@ class CsvIO:
                     count_d[d].append(line.count(d))
                 line=self._handle.readline()
                 if line=='': break
-            
 
             self._delimiter=self._possible_delimiters[0]
+            delimiters=dict((key,(0,0)) for key in self._possible_delimiters)
             
             # Get the most likely delimiter
             for k in count_d:
                 avg=sum(count_d[k])/len(count_d[k])
                 std=numpy.std(count_d[k])
-                if avg > count_d[self._delimiter][0] or (avg==count_d[self._delimiter][0] and std<count_d[self._delimiter][0]):
+                if avg > delimiters[self._delimiter][0] or (avg==delimiters[self._delimiter][0] and std<delimiters[self._delimiter][0]):
                     self._delimiter=k
+                delimiters[k]=(avg,std)
         else: self._delimiter=delimiter
 
         self._handle.seek(0)
