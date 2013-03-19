@@ -167,22 +167,33 @@ class CsvIO:
             # numpy_col.append(numpy.fromstring(col))
             # @TODO Something like this...
             numpy_col.append(col)
-        numpy_col=numpy.core.records.fromarrays(numpy_col)
-        print numpy_col
+        #numpy_col=numpy.core.records.fromarrays(numpy_col)
+        #print numpy_col
         return numpy_col
     
 
     
-    def read(self,names=True):
+    def read(self,as_dict=False):
         """Return a 2-dimensional numpy array with the content of the CSV-file
 
         Keyword arguments:
-        names -- Should the names be extracted from the first line of the CSV-file and saved in the dtype?
+        as_dict -- Should the output be a list of dicts with labels from the first line?
         """
+        self._handle.seek(0)
         out=[]
+        if as_dict:
+            labels=self.readline()
         while True:
             try:
-                out.append(self.readline())
+                if as_dict:
+                    data=self.readline()
+                    datadict={}
+                    for idx, val in enumerate(data):
+                        datadict[labels[idx]]=val
+                    out.append(datadict)
+                    print datadict
+                else:
+                    out.append(self.readline())
             except EOFError:
                 break
         return out
