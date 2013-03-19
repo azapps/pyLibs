@@ -168,7 +168,6 @@ class CsvIO:
             # @TODO Something like this...
             numpy_col.append(col)
         #numpy_col=numpy.core.records.fromarrays(numpy_col)
-        #print numpy_col
         return numpy_col
     
 
@@ -191,7 +190,6 @@ class CsvIO:
                     for idx, val in enumerate(data):
                         datadict[labels[idx]]=val
                     out.append(datadict)
-                    print datadict
                 else:
                     out.append(self.readline())
             except EOFError:
