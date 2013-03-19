@@ -167,6 +167,8 @@ class CsvIO:
             # numpy_col.append(numpy.fromstring(col))
             # @TODO Something like this...
             numpy_col.append(col)
+        numpy_col=numpy.core.records.fromarrays(numpy_col)
+        print numpy_col
         return numpy_col
     
 
